@@ -7,7 +7,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: ['https://crijanpersonalblog.vercel.app', 'http://localhost:3000', 'http://localhost:3001','http://localhost:3002'],
+  origin: ['https://crijanpersonalblog.vercel.app', 'http://localhost:3000', 'http://localhost:3001','http://localhost:3002','https://crijanblog.vercel.app'],
 }));app.use(express.json({ limit: '50mb' })); // Adjust the limit as needed
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
