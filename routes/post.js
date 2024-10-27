@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getPosts, getPostById, createPost, updatePost, deletePost, getAllTags,getPostsByCategory,getPostBySlug } = require('../controllers/postController');
+const { getPosts, getPostById, createPost, updatePost, deletePost, getAllTags,getPostsByCategory,getPostBySlug,getPostsByTag } = require('../controllers/postController');
 
 // Define the routes
 router.get('/', getPosts);              // GET all posts
@@ -11,6 +11,8 @@ router.delete('/:id', deletePost);      // DELETE a post by ID
 router.get('/category/:category', getPostsByCategory);
 // New Route for fetching all unique tags
 router.get('/tags', getAllTags);        // GET all unique tags
+router.get('/tag/:tag', getPostsByTag);
+
 router.get('/slug/:slug', getPostBySlug);
 
 module.exports = router;

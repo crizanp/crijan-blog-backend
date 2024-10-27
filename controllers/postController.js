@@ -148,3 +148,22 @@ exports.getPostBySlug = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+exports.getPostsByTag = async (req, res) => {
+  const tagName = req.params.tag; // Get the tag from the URL
+
+  try {
+    // Find posts that contain the specified tag
+    const posts = await Post.find({
+      tags: { $regex: new RegExp(`^${tagName}$`, 'i') } // Use regex for case-insensitive match
+    });
+
+    if (!posts || posts.length === 0) {
+      return res.status(404).json({ message: `No posts found for tag '${tagName}'` });
+    }
+
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error('Error fetching posts by tag:', error);
+    res.status(500).json({ message: 'Server error while fetching posts by tag', error: error.message });
+  }
+};
