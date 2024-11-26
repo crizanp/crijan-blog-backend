@@ -167,3 +167,51 @@ exports.getPostsByTag = async (req, res) => {
     res.status(500).json({ message: 'Server error while fetching posts by tag', error: error.message });
   }
 };
+// Controller for fetching consolidated blog data by slug
+exports.getBlogData = async (req, res) => {
+  const { slug } = req.params; // Get the slug from the URL
+
+  try {
+    // Fetch the main post by its slug
+    const post = await Post.findOne({ slug }).populate("category");
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    // Fetch the latest posts (limit to 5)
+    const latestPosts = await Post.find().sort({ createdAt: -1 }).limit(5);
+
+    // Fetch similar posts by category, excluding the current post
+    const similarPosts = await Post.find({
+      category: post.category._id,
+      slug: { $ne: slug },
+    })
+      .sort({ createdAt: -1 })
+      .limit(2);
+
+    // Fetch all categories
+    const categories = await Category.find();
+
+    // Fetch all unique tags
+    const postsWithTags = await Post.find({}, "tags");
+    const tagsSet = new Set();
+    postsWithTags.forEach((p) => {
+      if (Array.isArray(p.tags)) {
+        p.tags.forEach((tag) => tagsSet.add(tag));
+      }
+    });
+    const uniqueTags = Array.from(tagsSet);
+
+    // Consolidated response
+    res.status(200).json({
+      post,
+      latestPosts,
+      similarPosts,
+      categories,
+      tags: uniqueTags,
+    });
+  } catch (error) {
+    console.error("Error fetching blog data:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
