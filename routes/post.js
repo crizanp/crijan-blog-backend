@@ -13,7 +13,6 @@ router.get('/category/:category', getPostsByCategory);
 router.get('/tags', getAllTags);        // GET all unique tags
 router.get('/tag/:tag', getPostsByTag);
 router.get("/blogData/:slug", getBlogData);
-
 router.get('/slug/:slug', getPostBySlug);
 
 module.exports = router;
