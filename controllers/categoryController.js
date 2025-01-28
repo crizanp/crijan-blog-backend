@@ -9,7 +9,38 @@ exports.getCategories = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+exports.getCategoryPostTitles = async (req, res) => {
+  try {
+    const categoryParam = req.params.category;
+    
+    // Convert hyphen-separated parameter to space-separated
+    const categoryName = categoryParam.replace(/-/g, ' ');
+    
+    // Case-insensitive search with exact match
+    const category = await Category.findOne({
+      name: { $regex: new RegExp(`^${categoryName}$`, 'i') }
+    });
 
+    if (!category) {
+      return res.status(404).json({ 
+        message: `Category '${categoryName}' not found` 
+      });
+    }
+
+    const posts = await Post.find(
+      { category: category._id },
+      'title slug imageUrl tags'
+    ).lean();
+
+    res.status(200).json(posts);
+  } catch (error) {
+    console.error('Error fetching category titles:', error);
+    res.status(500).json({
+      message: 'Server error',
+      error: error.message
+    });
+  }
+};
 // Controller for fetching a single category by ID
 exports.getCategoryById = async (req, res) => {
   try {
