@@ -33,7 +33,10 @@ app.delete('/api/categories/:id', auth, categoryRoutes);
 app.post('/api/posts', auth, postRoutes);
 app.put('/api/posts/:id', auth, postRoutes);
 app.delete('/api/posts/:id', auth, postRoutes);
-
+app.use((err, req, res, next) => {
+  console.error("🔥 Unhandled Error:", err.stack); // This should log the error in VS Code
+  res.status(500).json({ message: "Internal Server Error", error: err.message });
+});
 // Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {

@@ -116,26 +116,29 @@ exports.deletePost = async (req, res) => {
 // Controller for fetching all unique tags
 exports.getAllTags = async (req, res) => {
   try {
-    // Fetch all posts and project only the tags field
-    const posts = await Post.find({}, 'tags');
+    console.log("Fetching all unique tags...");
 
-    // Use a Set to store unique tags
-    const tagsSet = new Set();
+    // Use MongoDB Aggregation to get unique tags from the posts
+    const uniqueTags = await Post.aggregate([
+      { $unwind: "$tags" }, // Unwind tags array to process each tag separately
+      { $match: { tags: { $ne: null } } }, // Filter out null or empty tags
+      { $group: { _id: "$tags" } }, // Group by tag and get unique tags
+      { $sort: { _id: 1 } }, // Sort tags alphabetically
+    ]);
 
-    posts.forEach(post => {
-      if (Array.isArray(post.tags)) {
-        post.tags.forEach(tag => tagsSet.add(tag));
-      }
-    });
+    // Map the result to get only tag names
+    const tags = uniqueTags.map(tag => tag._id);
 
-    // Convert Set back to an array
-    const uniqueTags = Array.from(tagsSet);
+    console.log(`Fetched ${tags.length} unique tags.`);
 
-    res.status(200).json(uniqueTags);
+    // Return the unique tags in the response
+    res.status(200).json(tags);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching unique tags:', error);
+    res.status(500).json({ message: 'Server error while fetching unique tags', error: error.message });
   }
 };
+
 exports.getPostsByCategory = async (req, res) => {
   const categoryName = req.params.category; // Get the category from the URL
 
