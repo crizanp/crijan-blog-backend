@@ -11,6 +11,7 @@ app.use(cors({
 }));
 app.use(express.json()); // Uses the default limit of 100kb
 app.use(express.urlencoded({ extended: true })); // Uses the default limit of 100kb for URL-encoded data
+const quizRoutes = require('./routes/quizRoutes');
 
 // Import routes
 const categoryRoutes = require('./routes/category');
@@ -18,12 +19,15 @@ const postRoutes = require('./routes/post');
 const adminRoutes = require('./routes/admin');
 const auth = require('./middleware/auth');
 const semesterRoutes = require('./routes/semesterRoutes');
+const questionTypeRoutes = require('./routes/questionTypeRoutes');
 
 // Use routes
 app.use('/api/categories', categoryRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/semesters', semesterRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/quizzes', quizRoutes);
+app.use('/api/question-types', questionTypeRoutes);
 
 // Protect only POST, PUT, DELETE routes with auth middleware
 app.post('/api/categories', auth, categoryRoutes);
