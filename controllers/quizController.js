@@ -24,18 +24,21 @@ exports.getQuizById = async (req, res) => {
 
 exports.createQuiz = async (req, res) => {
   try {
-    const { questionType, questionText, options, correctAnswer, explanation, difficulty } = req.body;
+    const { questionType, questionText, options, correctAnswers, explanation, difficulty } = req.body;
 
-    // Add validation for options structure
     if (!Array.isArray(options) || options.some(opt => !opt.text)) {
       return res.status(400).json({ message: 'Options must be an array of objects with text properties' });
+    }
+
+    if (!Array.isArray(correctAnswers) || correctAnswers.length === 0) {
+      return res.status(400).json({ message: 'Correct answers must be an array with at least one value' });
     }
 
     const newQuiz = new Quiz({
       questionType,
       questionText,
       options,
-      correctAnswer,
+      correctAnswers,
       explanation,
       difficulty
     });
@@ -103,9 +106,10 @@ exports.getQuizQuestions = async (req, res) => {
 
 exports.getQuizAnswers = async (req, res) => {
   try {
-    const quizzes = await Quiz.find({}).select('questionText correctAnswer'); // Fetch questionText and correctAnswer only
+    const quizzes = await Quiz.find({}).select('questionText correctAnswers');
     res.status(200).json(quizzes);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
+

@@ -1,4 +1,3 @@
-// models/Quiz.js
 const mongoose = require('mongoose');
 
 const QuizSchema = new mongoose.Schema({
@@ -14,8 +13,8 @@ const QuizSchema = new mongoose.Schema({
     text: String,
     _id: false
   }],
-  correctAnswer: {
-    type: String,
+  correctAnswers: { // Updated to store multiple correct answers
+    type: [String], 
     required: true
   },
   explanation: {
