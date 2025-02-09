@@ -84,22 +84,40 @@ exports.deleteQuiz = async (req, res) => {
 }; exports.getQuizzesByType = async (req, res) => {
   try {
     const { questionType, difficulty } = req.query;
-    
+
     const filter = { questionType };
     if (difficulty) filter.difficulty = parseInt(difficulty);
 
     // Get random 10 quizzes using aggregation
     const quizzes = await Quiz.aggregate([
       { $match: filter },
-      { $sample: { size: 10 } }
+      { $sample: { size: 10 } },
     ]);
 
-    res.status(200).json(quizzes);
+    // Shuffle the options for each quiz
+    const quizzesWithRandomizedOptions = quizzes.map((quiz) => {
+      // Shuffle the options array
+      const shuffledOptions = shuffleArray(quiz.options);
+      return {
+        ...quiz,
+        options: shuffledOptions, // Replace the original options with shuffled options
+      };
+    });
+
+    res.status(200).json(quizzesWithRandomizedOptions);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
 
+// Helper function to shuffle an array (Fisher-Yates algorithm)
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // Random index from 0 to i
+    [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+  }
+  return array;
+}
 exports.getQuizQuestions = async (req, res) => {
   try {
     const quizzes = await Quiz.find({}).select('questionText'); // Only fetch questionText
