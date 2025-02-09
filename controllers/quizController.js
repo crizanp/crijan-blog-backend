@@ -88,7 +88,12 @@ exports.deleteQuiz = async (req, res) => {
     const filter = { questionType };
     if (difficulty) filter.difficulty = parseInt(difficulty);
 
-    const quizzes = await Quiz.find(filter);
+    // Get random 10 quizzes using aggregation
+    const quizzes = await Quiz.aggregate([
+      { $match: filter },
+      { $sample: { size: 10 } }
+    ]);
+
     res.status(200).json(quizzes);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -112,4 +117,44 @@ exports.getQuizAnswers = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
+exports.getQuizCounts = async (req, res) => {
+  try {
+    const { questionType, difficulty } = req.query;
+    
+    const counts = {
+      total: 0,
+      byType: {},
+      byTypeAndDifficulty: {}
+    };
+    
+    counts.total = await Quiz.countDocuments();
+    
+    // Get all types if no specific type requested
+    const types = questionType ? [questionType] : await Quiz.distinct('questionType');
+    
+    // Populate byType counts
+    for (const type of types) {
+      counts.byType[type] = await Quiz.countDocuments({ questionType: type });
+      
+      // Get difficulties for this type
+      const difficulties = difficulty ? [parseInt(difficulty)] : await Quiz.distinct('difficulty', { questionType: type });
+      
+      // Populate byTypeAndDifficulty counts
+      for (const diff of difficulties) {
+        const key = `${type}_${diff}`;
+        counts.byTypeAndDifficulty[key] = await Quiz.countDocuments({
+          questionType: type,
+          difficulty: diff
+        });
+      }
+    }
+    
+    res.status(200).json(counts);
+  } catch (error) {
+    console.error('Error getting quiz counts:', error);
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
+  }
+};
