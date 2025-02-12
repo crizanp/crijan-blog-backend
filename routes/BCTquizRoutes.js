@@ -9,6 +9,7 @@ const {
   getQuizzesByType,
   getQuizQuestions,
   getQuizAnswers,
+  createMultipleQuizzes,
   getQuizCounts // Add this new controller
 } = require('../controllers/BCTquizController');
 
@@ -23,6 +24,8 @@ router.get('/', getQuizzes);
 router.get('/:id', getQuizById);
 router.post('/', createQuiz);
 router.put('/:id', updateQuiz);
+router.post('/bulk', createMultipleQuizzes);
+
 router.delete('/:id', deleteQuiz);
 
 module.exports = router;
