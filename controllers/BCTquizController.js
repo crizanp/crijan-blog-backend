@@ -117,7 +117,65 @@ exports.deleteQuiz = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+exports.createMultipleQuizzes = async (req, res) => {
+  try {
+    const quizzes = req.body;
+    
+    if (!Array.isArray(quizzes)) {
+      return res.status(400).json({ message: 'Request body should be an array of quizzes' });
+    }
 
+    // Validate all quizzes before saving any
+    for (const quiz of quizzes) {
+      const { questionType, options, correctAnswers } = quiz;
+      
+      // Validate questionType
+      if (!mongoose.Types.ObjectId.isValid(questionType)) {
+        return res.status(400).json({ 
+          message: 'Invalid question type ID', 
+          questionType: questionType 
+        });
+      }
+
+      // Validate question type exists
+      const questionTypeExists = await BCTQuestionType.findById(questionType);
+      if (!questionTypeExists) {
+        return res.status(400).json({ 
+          message: 'Question type not found',
+          questionType: questionType
+        });
+      }
+
+      // Validate options
+      if (!Array.isArray(options) || options.some(opt => !opt.text)) {
+        return res.status(400).json({ 
+          message: 'Options must be an array of objects with text properties',
+          quiz: quiz
+        });
+      }
+
+      // Validate correctAnswers
+      if (!Array.isArray(correctAnswers) || correctAnswers.length === 0) {
+        return res.status(400).json({ 
+          message: 'Correct answers must be an array with at least one value',
+          quiz: quiz
+        });
+      }
+    }
+
+    // If all validations pass, create the quizzes
+    const createdQuizzes = await BCTLicense.insertMany(quizzes);
+    res.status(201).json(createdQuizzes);
+    
+  } catch (error) {
+    console.error('Error creating multiple quizzes:', error);
+    res.status(400).json({
+      message: 'Error creating quizzes',
+      error: error.message,
+      details: error.errors
+    });
+  }
+};
 exports.getQuizzesByType = async (req, res) => {
   try {
     const { questionType: questionTypeName, subTopic } = req.query;
@@ -188,27 +246,35 @@ exports.getQuizCounts = async (req, res) => {
       byTypeAndSubTopic: {}
     };
 
+    // Get total count
     counts.total = await BCTLicense.countDocuments();
 
-    // Get all types if no specific type requested
-    const types = questionType ? [questionType] : await BCTLicense.distinct('questionType');
+    // Get question types
+    const types = questionType 
+      ? [questionType] 
+      : await BCTLicense.distinct('questionType');
 
-    // Populate byType counts
-    for (const type of types) {
+    // Populate counts for each type
+    await Promise.all(types.map(async (type) => {
+      // Get count for this type
       counts.byType[type] = await BCTLicense.countDocuments({ questionType: type });
 
       // Get subTopics for this type
-      const subTopics = subTopic ? [subTopic] : await BCTLicense.distinct('subTopic', { questionType: type });
+      const subTopics = subTopic 
+        ? [subTopic] 
+        : await BCTLicense.distinct('subTopic', { questionType: type });
 
-      // Populate byTypeAndSubTopic counts
-      for (const sub of subTopics) {
-        const key = `${type}_${sub}`;
-        counts.byTypeAndSubTopic[key] = await BCTLicense.countDocuments({
-          questionType: type,
-          subTopic: sub
-        });
-      }
-    }
+      // Get counts for each subTopic
+      await Promise.all(subTopics.map(async (sub) => {
+        if (sub) { // Only count if subTopic exists
+          const key = `${type}_${sub}`;
+          counts.byTypeAndSubTopic[key] = await BCTLicense.countDocuments({
+            questionType: type,
+            subTopic: sub
+          });
+        }
+      }));
+    }));
 
     res.status(200).json(counts);
   } catch (error) {
