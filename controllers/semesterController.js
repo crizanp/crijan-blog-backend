@@ -28,7 +28,7 @@ exports.getSubjectsBySemesterName = async (req, res) => {
   try {
     const semester = await Semester.findOne({ name: new RegExp(`^${req.params.semesterName}$`, 'i') })
       .populate({
-        path: 'subjects',
+        path: 'posts',
         select: '-content' // Exclude the content field during population
       });
       
