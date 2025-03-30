@@ -179,24 +179,32 @@ exports.deletePostInSubject = async (req, res) => {
 //9 Get posts by subject
 exports.getPostsBySubject = async (req, res) => {
   const { semesterName, subjectName } = req.params;
-
+  
   try {
     const semester = await Semester.findOne({ name: new RegExp(`^${semesterName}$`, 'i') });
     if (!semester) {
       return res.status(404).json({ message: 'Semester not found' });
     }
-
+    
     const subject = semester.subjects.find(sub => sub.name.toLowerCase() === subjectName.toLowerCase());
     if (!subject) {
       return res.status(404).json({ message: 'Subject not found' });
     }
-
-    res.status(200).json(subject.posts);
+    
+    // Map posts to only include the fields you want
+    const simplifiedPosts = subject.posts.map(post => ({
+      title: post.title,
+      _id: post._id,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      slug: post.slug
+    }));
+    
+    res.status(200).json(simplifiedPosts);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 //10 Get post by slug
 exports.getPostBySlug = async (req, res) => {
   const { semesterName, subjectName, postSlug } = req.params;
