@@ -10,33 +10,52 @@ exports.getSemesters = async (req, res) => {
   }
 };
 
-//2 Get semester by name
+//2 Get semester by name (excluding post content)
 exports.getSemesterByName = async (req, res) => {
+  try {
+    const semester = await Semester.findOne({ 
+      name: new RegExp(`^${req.params.semesterName}$`, 'i') 
+    }).lean(); // Use lean() for plain JavaScript object
+    
+    if (!semester) {
+      return res.status(404).json({ message: 'Semester not found' });
+    }
+
+    // Transform subjects and posts
+    const transformed = {
+      ...semester,
+      subjects: semester.subjects.map(subject => ({
+        ...subject,
+        posts: subject.posts.map(post => {
+          const { content, ...rest } = post;
+          return rest;
+        })
+      }))
+    };
+
+    res.status(200).json(transformed);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+exports.getSubjectsBySemesterName = async (req, res) => {
   try {
     const semester = await Semester.findOne({ name: new RegExp(`^${req.params.semesterName}$`, 'i') });
     if (!semester) {
       return res.status(404).json({ message: 'Semester not found' });
     }
-    res.status(200).json(semester);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-//3 Get subjects by semester name
-exports.getSubjectsBySemesterName = async (req, res) => {
-  try {
-    const semester = await Semester.findOne({ name: new RegExp(`^${req.params.semesterName}$`, 'i') })
-      .populate({
-        path: 'posts',
-        select: '-content' // Exclude the content field during population
-      });
-      
-    if (!semester) {
-      return res.status(404).json({ message: 'Semester not found' });
-    }
     
-    res.status(200).json(semester.subjects);
+    // Convert to plain object and remove content from posts
+    const semesterData = semester.toObject ? semester.toObject() : semester;
+    const transformedSubjects = semesterData.subjects.map(subject => ({
+      ...subject,
+      posts: subject.posts.map(({ content, ...post }) => post)
+    }));
+
+    res.status(200).json({
+      ...semesterData,
+      subjects: transformedSubjects
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
