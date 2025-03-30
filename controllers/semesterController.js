@@ -191,20 +191,22 @@ exports.getPostsBySubject = async (req, res) => {
       return res.status(404).json({ message: 'Subject not found' });
     }
     
-    // Map posts to only include the fields you want
+    // Map posts to include trimmed content (first 30 words)
     const simplifiedPosts = subject.posts.map(post => ({
       title: post.title,
       _id: post._id,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
-      slug: post.slug
+      slug: post.slug,
+      content: post.content.split(/\s+/).slice(0, 30).join(' ') + '...' // Get first 30 words
     }));
-    
-    res.status(200).json(simplifiedPosts);
+
+    res.json(simplifiedPosts);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error });
   }
 };
+
 //10 Get post by slug
 exports.getPostBySlug = async (req, res) => {
   const { semesterName, subjectName, postSlug } = req.params;
