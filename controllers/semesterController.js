@@ -30,7 +30,15 @@ exports.getSubjectsBySemesterName = async (req, res) => {
     if (!semester) {
       return res.status(404).json({ message: 'Semester not found' });
     }
-    res.status(200).json(semester.subjects);
+    
+    // Return all fields for each subject except 'content'
+    const subjectsWithoutContent = semester.subjects.map(subject => {
+      const subjectObj = subject.toObject ? subject.toObject() : {...subject};
+      delete subjectObj.content;
+      return subjectObj;
+    });
+    
+    res.status(200).json(subjectsWithoutContent);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
