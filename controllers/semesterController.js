@@ -26,24 +26,21 @@ exports.getSemesterByName = async (req, res) => {
 //3 Get subjects by semester name
 exports.getSubjectsBySemesterName = async (req, res) => {
   try {
-    const semester = await Semester.findOne({ name: new RegExp(`^${req.params.semesterName}$`, 'i') });
+    const semester = await Semester.findOne({ name: new RegExp(`^${req.params.semesterName}$`, 'i') })
+      .populate({
+        path: 'subjects',
+        select: '-content' // Exclude the content field during population
+      });
+      
     if (!semester) {
       return res.status(404).json({ message: 'Semester not found' });
     }
     
-    // Return all fields for each subject except 'content'
-    const subjectsWithoutContent = semester.subjects.map(subject => {
-      const subjectObj = subject.toObject ? subject.toObject() : {...subject};
-      delete subjectObj.content;
-      return subjectObj;
-    });
-    
-    res.status(200).json(subjectsWithoutContent);
+    res.status(200).json(semester.subjects);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 //4 Add a new semester
 exports.addSemester = async (req, res) => {
   const { name } = req.body;
